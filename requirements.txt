@@ -1,0 +1,5 @@
+captcha
+matplotlib
+numpy
+tqdm
+pandas
