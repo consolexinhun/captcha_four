@@ -8,18 +8,13 @@ import time
 from PIL import Image
 import os
 
-
 def generator_captcha():
-
     width, height, n_len, n_class = WIDTH, HEIGHT, CAPTCHA_LEN, CAPTCHA_CLASSES
     chars =  CAPTCHAES
-    # img = gen.generate_image(str_)
     gen = ImageCaptcha(width=width, height=height)
     str_ = ''.join([random.choice(chars) for _ in range(CAPTCHA_LEN)])
     image = Image.open(gen.generate(str_))
     return str_, image
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -41,7 +36,13 @@ if __name__ == "__main__":
         str_, image = generator_captcha()
         filename = str_ + "_" + now + ".png"
         image.save(os.path.join(path, filename))
-        # image.save(path + os.path.sep + filename)
+
+
+
+
+
+
+# image.save(path + os.path.sep + filename)
 
 
 
