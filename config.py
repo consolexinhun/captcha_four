@@ -1,8 +1,8 @@
 import string
 import os
 
-WIDTH =  170 # 验证码宽
-HEIGHT = 80 # 验证码高
+WIDTH =  128 # 验证码宽
+HEIGHT = 64 # 验证码高
 
 CAPTCHA_LEN =  4 # 验证码个数
 CAPTCHAES = string.digits+string.ascii_uppercase # 字符种类，默认数字+大写字母
