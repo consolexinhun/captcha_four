@@ -12,5 +12,9 @@ TRAIN_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),"data/train")
 VAL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),"data/val"))
 TEST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),"data/test"))
 
+BATCH_SIZE =32
+LEARNING_RATE= 1e-5
+EPOCHS = 20
+
 SAVE_FREQ = 2 # 保存模型的频率
 

@@ -11,34 +11,27 @@ import tensorflow as tf
 from tensorflow.keras import datasets, layers, optimizers, Sequential, metrics
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-
 '''
 # 将字符串验证码转为在字母表中的位置(list), 方便转为ont-hot编码
 # print(tf.one_hot(index, depth=CAPTCHA_CLASSES, dtype=tf.int32))
 '''
-def encode(label):
-    index = [CAPTCHAES.find(i) for i in label]
-    return tf.one_hot(index, depth=CAPTCHA_CLASSES, dtype=tf.int32)
+def encode(str_):
+    index = [CAPTCHAES.find(i) for i in str_]
+    one_hot = tf.one_hot(index, depth=CAPTCHA_CLASSES, dtype=tf.float32)
+    one_hot = tf.reshape(one_hot, (-1,)) # 变为向量 # print(one_hot)
+    return one_hot
 '''
 将位置转化为字符串验证码
 '''
-def decode(index):
-    label = "".join([CAPTCHAES[i] for i in index])
-    return label
-'''
-将one_hot转为字符串验证码
-# shape=(32, 4, 36)
-'''
-def de_one_hot(one_hot):
-    batch = tf.argmax(one_hot, axis=-1) # shape=(32, 4)
-    if len(batch.shape) == 2:
-        res = []
-        for index in batch:
-            res.append(decode(index)) # index表示4位的索引
-    else: # 如果只有1张图片
-        res = decode(batch)
-    return res
+def decode(one_hot):
+    index = tf.reshape(one_hot, (CAPTCHA_LEN, CAPTCHA_CLASSES))
+    str_ = "".join([CAPTCHAES[tf.argmax(i)] for i in index]) # print(str_)
+    return str_
 
+'''
+加载数据集
+root : 数据集目录
+'''
 def load_dataset(root):
     img_paths, labels = [], []
     for name in sorted(os.listdir(root)):
@@ -47,20 +40,39 @@ def load_dataset(root):
     return img_paths, labels
 
 def preprocess(x, y):
-    x  =tf.io.read_file(x)
-    x = tf.image.decode_jpeg(x, channels=3)
+    x = tf.io.read_file(x)
+    x = tf.image.decode_jpeg(x, channels=1)
     x = tf.cast(x, dtype=tf.float32) / 255.
     y = tf.convert_to_tensor(y)
     return x, y
 
 if __name__ == '__main__':
-    img_paths, labels = load_dataset("data/test")           # print(img_paths[1], labels[1])
-    db  = tf.data.Dataset.from_tensor_slices((img_paths, labels))
-    db= db.shuffle(1000).map(preprocess).batch(32)   #  print(next(iter(db))[0].shape,next(iter(db))[1].shape)
+    # one = encode("BK7H")
+    # de = decode(one)
 
-    # print(next(iter(db))[0].shape, next(iter(db))[1].shape) # (32, 80, 170, 3) (32, 4, 36)
-    # print(tf.transpose(next(iter(db))[1], perm=[1, 0, 2]).shape) # 标签必须换维度,要不然和网络的维度不一样
-    # print(de_one_hot(next(iter(db))[1]))
+    img_paths, labels = load_dataset("data/test")
+
+    db  = tf.data.Dataset.from_tensor_slices((img_paths, labels))
+    db= db.map(preprocess).shuffle(1000).batch(32)
+    (x, y) = next(iter(db))
+    plt.imshow(tf.squeeze(x[0]), cmap='gray')
+    plt.show()
+    print(decode(y[0]))
+
+
+    # for i, (x, y) in enumerate(db):
+    #     print(i)
+    #     print(x.shape, y.shape)
+
+
+
+
+
+
+
+
+
+
 
 
 

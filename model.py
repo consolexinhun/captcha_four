@@ -4,60 +4,37 @@ from tensorflow.keras import datasets, layers, optimizers, Sequential, metrics
 import os
 import numpy as np
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-from dataloader import encode, decode, load_dataset, preprocess
-
-class MyModel(tf.keras.Model):
-    def __init__(self):
-        super(MyModel, self).__init__()
-        model = Sequential()
-        # channel, repeat
-        setting = [
-            [64, 2],
-            [128, 2],
-            [192, 2],
-            [192, 2],
-            [192, 2]
-        ]
-        flag = True
-        for channel, repeat in setting:
-            for i in range(repeat):
-                if flag:
-                    model.add(layers.Conv2D(channel, input_shape=[HEIGHT, WIDTH, 3], kernel_size=3, padding="same",
-                                            kernel_initializer='he_uniform'))
-                    flag = False
-                else:
-                    model.add(layers.Conv2D(channel, kernel_size=3, padding="same", kernel_initializer='he_uniform'))
-                model.add(layers.BatchNormalization())
-                model.add(layers.Activation('relu'))
-            model.add(layers.MaxPool2D(2))
-        model.add(layers.Flatten())
-        self.model = model
-        self.dense = [layers.Dense(CAPTCHA_CLASSES, activation='softmax', name="Conv2D%d"%(i+1) ) for i in range(CAPTCHA_LEN)]
-
-    def call(self, inputs, trainint=None):
-        x = inputs
-        x = self.model(x)
-        out = []
-        for j in self.dense:
-            out.append(j(x))
-        return out
-
-if __name__ == '__main__':
-    pass
-    # x = tf.random.normal((32, 80, 170, 3))
-    # net = MyModel()
-    # y = net(x)
-    # print(np.array(y).shape) # (4, 32, 36)
 
 
+model = tf.keras.Sequential([
+    layers.Conv2D(32, input_shape=[HEIGHT, WIDTH, 1], kernel_size=3, padding='same'),
+    layers.BatchNormalization(),
+    layers.Dropout(0.2),
+    layers.Activation('relu'),
+    layers.Conv2D(32, kernel_size=3, padding='same'),
+    layers.BatchNormalization(),
+    layers.Dropout(0.2),
+    layers.Activation('relu'),
+    layers.MaxPooling2D(2),
 
 
+    layers.Conv2D(64, kernel_size=3, padding='same'),
+    layers.BatchNormalization(),
+    layers.Dropout(0.2),
+    layers.Activation('relu'),
+    layers.Conv2D(64, kernel_size=3, padding='same'),
+    layers.BatchNormalization(),
+    layers.Dropout(0.2),
+    layers.Activation('relu'),
+    layers.MaxPooling2D(2),
 
+    layers.Flatten(),
 
-# l = [layers.Dense(CAPTCHA_CLASSES, activation='softmax', name="Conv2D%d"%(i+1) ) for i in range(CAPTCHA_LEN)]
+    layers.Dense(1024),
+    layers.Dropout(0.2),
+    layers.Activation('relu'),
 
-# net = Sequential([
-#     [layers.Dense(CAPTCHA_CLASSES, activation='softmax', name="Conv2D%d"%(i+1) ) for i in range(CAPTCHA_LEN)]
-# ])
-# tf.keras.utils.plot_model(model, to_file="model.png", show_shapes=True, dpi=200)
+    layers.Dense(CAPTCHA_LEN*CAPTCHA_CLASSES)
+])
+
+# tf.keras.utils.plot_model(model, to_file="cnn.png", show_shapes=True, dpi=100)

@@ -8,38 +8,28 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 from dataloader import encode, decode, load_dataset, preprocess
 import time
-from model import MyModel
+from model import model
 from tqdm import tqdm
 
-
-batch_size, lr, epochs = 32, 1e-3, 20
 # train
-
 img_paths, labels = load_dataset(TRAIN_DIR)
 db_train  = tf.data.Dataset.from_tensor_slices((img_paths, labels))
-db_train = db_train.map(preprocess).shuffle(1000).batch(batch_size)
-
+db_train = db_train.map(preprocess).shuffle(1000).batch(BATCH_SIZE)
 
 # val
 img_paths, labels = load_dataset(VAL_DIR)
 db_val  = tf.data.Dataset.from_tensor_slices((img_paths, labels))
-db_val = db_val.map(preprocess).shuffle(1000).batch(batch_size)
+db_val = db_val.map(preprocess).shuffle(1000).batch(1)
 
 print("datasets loaded!")
-# test
-# img_paths, labels = load_dataset("data/test")
-# db_test  = tf.data.Dataset.from_tensor_slices((img_paths, labels))
-# db_test = db_test.shuffle(1000).map(preprocess).batch(batch_size)
 
-model = MyModel()
+optimizer = optimizers.Adam(lr=LEARNING_RATE)
 
-optimizer = optimizers.Adam(lr=lr)
-for epoch in tqdm(range(epochs)):
+for epoch in tqdm(range(EPOCHS)):
     for step, (x, y) in enumerate(db_train):
-        label  = tf.transpose(y, perm=[1, 0, 2])
         with tf.GradientTape() as tape:
             logits = model(x)
-            loss = tf.reduce_mean(tf.losses.categorical_crossentropy(label, logits, from_logits=True))
+            loss = tf.reduce_mean(tf.losses.categorical_crossentropy(y, logits, from_logits=True))
         grads = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
@@ -50,22 +40,11 @@ for epoch in tqdm(range(epochs)):
     total_num = 0
     for x, y in db_val: # y(32, 4, 36)
         logits = model(x) # (4, 32, 36)
-        out = tf.transpose(logits, perm=[1, 0, 2]) # (32, 4, 36)
         size = x.shape[0]
-
         correct = 0
         for i in range(size):
-            arg_out = tf.argmax(out[i], axis=-1) # 4
-            arg_y = tf.argmax(y[i], axis=-1) # 4
-
-            flag = True
-            for j in range(CAPTCHA_LEN):
-                if not tf.equal(arg_y[j], arg_out[j]): # 4位验证码中如果有一个不相等就不算对
-                    flag = False
-                    break
-            if flag:
+            if decode(logits) == decode(y):
                 correct += 1
-
         total_correct  += correct
         total_num += size
 
@@ -74,7 +53,6 @@ for epoch in tqdm(range(epochs)):
 
     # if epoch % SAVE_FREQ == 0:
     #     model.save("model/"+str(epoch)+".weight")
-
 
 # model.load_weights()
 
